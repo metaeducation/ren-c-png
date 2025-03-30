@@ -7,9 +7,8 @@
     bmp-img: decode 'bmp read %../fixtures/rebol-logo.bmp
     gif-img: decode 'gif read %../fixtures/rebol-logo.gif
     png-img: decode 'png read %../fixtures/rebol-logo.png
-    did all [
+    all [
         bmp-img == gif-img
         bmp-img == png-img
     ]
 )
-

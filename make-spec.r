@@ -1,19 +1,23 @@
-REBOL []
-name: 'PNG
-source: %png/mod-png.c
-definitions: copy [
+REBOL [
+    Name: PNG
+    Notes: "See %extensions/README.md for the format and fields of this file"
+]
+
+use-librebol: 'yes
+
+definitions: [
     ;
     ; Rebol already includes zlib, and LodePNG is hooked to that
     ; copy of zlib exported as part of the internal API.
     ;
-    "LODEPNG_NO_COMPILE_ZLIB"
+    LODEPNG_NO_COMPILE_ZLIB
 
     ; LodePNG doesn't take a target buffer pointer to compress "into".
     ; Instead, you hook it by giving it an allocator.  The one used
     ; by Rebol backs the memory with a series, so that the image data
     ; may be registered with the garbage collector.
     ;
-    "LODEPNG_NO_COMPILE_ALLOCATORS"
+    LODEPNG_NO_COMPILE_ALLOCATORS
 
     ; With LodePNG, using C++ compilation creates a dependency on
     ; std::vector.  This is conditional on __cplusplus, but there's
@@ -21,11 +25,11 @@ definitions: copy [
     ; do this.  It's not an interesting debug usage of C++, however,
     ; so there's no reason to be doing it.
     ;
-    "LODEPNG_NO_COMPILE_CPP"
+    LODEPNG_NO_COMPILE_CPP
 
     ; We don't want LodePNG's disk I/O routines--we use READ and write
     ;
-    "LODEPNG_NO_COMPILE_DISK"
+    LODEPNG_NO_COMPILE_DISK
 
     ; There's an option for handling "ancillary chunks".  These are things
     ; like text or embedded ICC profiles:
@@ -35,19 +39,17 @@ definitions: copy [
     ; support for them will just make the executable bigger.  Leave these
     ; out for now.
     ;
-    "LODEPNG_NO_COMPILE_ANCILLARY_CHUNKS"
+    LODEPNG_NO_COMPILE_ANCILLARY_CHUNKS
 ]
-includes: [
-    %prep/extensions/png
-]
+
+sources: %mod-png.c
+
 depends: [
     [
-        %png/lodepng.c
+        %lodepng.c
 
         ; May 2018 update to MSVC 2017 added warnings about Spectre
-        ; mitigation.  The JPG code contains a lot of code that would
-        ; trigger slowdown.  It is not a priority to rewrite, given
-        ; that some other vetted 3rd party JPG code should be used.
+        ; mitigation.
         ;
         <msc:/wd5045>  ; https://stackoverflow.com/q/50399940
 

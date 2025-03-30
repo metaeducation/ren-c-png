@@ -8,7 +8,7 @@
 //=////////////////////////////////////////////////////////////////////////=//
 //
 // Copyright 2012 REBOL Technologies
-// Copyright 2012-2017 Ren-C Open Source Contributors
+// Copyright 2012-2025 Ren-C Open Source Contributors
 // REBOL is a trademark of REBOL Technologies
 //
 // See README.md and CREDITS.md for more information.
@@ -21,28 +21,10 @@
 //
 //=////////////////////////////////////////////////////////////////////////=//
 //
-// R3-Alpha had some PNG decoding in a file called %u-png.c.  That decoder
-// appeared to be original code from Rebol Technologies, as there are no
-// comments saying otherwise.  Saphirion apparently hit bugs in the encoding
-// that file implemented, but rather than try and figure out how to fix it
-// they just included LodePNG--and adapted it for use in encoding only:
-//
-// http://lodev.org/lodepng/
-//
-// LodePNG is an encoder/decoder that is also a single source file and header
-// file...but has some community of users and receives bugfixes.  So for
-// simplicity, Ren-C went ahead and removed %u-png.c to use LodePNG for
-// decoding and PNG file identification as well.
-//
-// Note: LodePNG is known to be slower than the more heavyweight "libpng"
-// library, and does not support the progressive/streaming decoding used by
-// web browsers.  For this reason, the extension is called "lodepng", to make
-// room for more sophisticated PNG decoders in the future.
+// See README.md for information about this extension.
 //
 
 #include "lodepng.h"
-
-#include "sys-core.h"
 
 #include "tmp-mod-png.h"
 
@@ -53,16 +35,16 @@
 // these 3 functions, and expects them to be defined somewhere if you
 // `#define LODEPNG_NO_COMPILE_ALLOCATORS` (set in %lodepng/make-spec.reb)
 //
-// Use rebMalloc(), because the memory can be later rebRepossess()'d into a
-// Rebol BINARY! value without making a new buffer and copying.
+// Use rebAllocBytes(), because the memory can be later rebRepossess()'d into
+// a Rebol BLOB! value without making a new buffer and copying.
 //
 //=////////////////////////////////////////////////////////////////////////=//
 
 void* lodepng_malloc(size_t size)
-  { return rebMalloc(size); }
+  { return rebAllocBytes(size); }
 
 void* lodepng_realloc(void* ptr, size_t new_size)
-  { return rebRealloc(ptr, new_size); }
+  { return rebReallocBytes(ptr, new_size); }
 
 void lodepng_free(void* ptr)
   { rebFree(ptr); }
@@ -135,15 +117,15 @@ static unsigned rebol_zlib_compress(
 //
 //  identify-png?: native [
 //
-//  {Codec for identifying BINARY! data for a PNG}
+//  "Codec for identifying BLOB! data for a PNG"
 //
-//      return: [logic!]
-//      data [binary!]
+//      return: [logic?]
+//      data [blob!]
 //  ]
 //
-DECLARE_NATIVE(identify_png_q)
+DECLARE_NATIVE(IDENTIFY_PNG_Q)
 {
-    PNG_INCLUDE_PARAMS_OF_IDENTIFY_PNG_Q;
+    INCLUDE_PARAMS_OF_IDENTIFY_PNG_Q;
 
     LodePNGState state;
     lodepng_state_init(&state);
@@ -159,7 +141,7 @@ DECLARE_NATIVE(identify_png_q)
     state.decoder.zlibsettings.custom_context = &arg;
 
     Size size;
-    const Byte* data = VAL_BINARY_SIZE_AT(&size, ARG(data));
+    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
 
     unsigned width;
     unsigned height;
@@ -191,15 +173,15 @@ DECLARE_NATIVE(identify_png_q)
 //
 //  decode-png: native [
 //
-//  {Codec for decoding BINARY! data for a PNG}
+//  "Codec for decoding BLOB! data for a PNG"
 //
-//      return: [image!]
-//      data [binary!]
+//      return: [fundamental?]  ; IMAGE! not currently exposed
+//      data [blob!]
 //  ]
 //
-DECLARE_NATIVE(decode_png)
+DECLARE_NATIVE(DECODE_PNG)
 {
-    PNG_INCLUDE_PARAMS_OF_DECODE_PNG;
+    INCLUDE_PARAMS_OF_DECODE_PNG;
 
     LodePNGState state;
     lodepng_state_init(&state);
@@ -222,7 +204,7 @@ DECLARE_NATIVE(decode_png)
     state.info_png.color.bitdepth = 8;
 
     Size size;
-    const Byte* data = VAL_BINARY_SIZE_AT(&size, ARG(data));
+    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
 
     unsigned char* image_bytes;
     unsigned w;
@@ -253,12 +235,12 @@ DECLARE_NATIVE(decode_png)
     // https://github.com/lvandeve/lodepng/issues/17
     //
 
-    REBVAL *binary = rebRepossess(image_bytes, (w * h) * 4);
+    RebolValue* blob = rebRepossess(image_bytes, (w * h) * 4);
 
     return rebValue(
-        "make image! compose [",
+        "make-image compose [",
             "(make pair! [", rebI(w), rebI(h), "])",
-            rebR(binary),
+            rebR(blob),
         "]"
     );
 }
@@ -267,13 +249,13 @@ DECLARE_NATIVE(decode_png)
 //
 //  encode-png: native [
 //
-//  {Codec for encoding a PNG image}
+//  "Codec for encoding a PNG image"
 //
-//      return: [binary!]
-//      image [image!]
+//      return: [blob!]
+//      image [fundamental?]  ; IMAGE! not currently exposed
 //  ]
 //
-DECLARE_NATIVE(encode_png)
+DECLARE_NATIVE(ENCODE_PNG)
 //
 // !!! Semantics for IMAGE! being a "series" with a "position" were extremely
 // dodgy in Rebol2/R3-Alpha (and remain so in things like Red today).  Saving
@@ -297,10 +279,10 @@ DECLARE_NATIVE(encode_png)
 //
 // We write the head position here--for lack of a better answer.
 {
-    PNG_INCLUDE_PARAMS_OF_ENCODE_PNG;
+    INCLUDE_PARAMS_OF_ENCODE_PNG;
 
-    REBVAL *image = ARG(image);
-    REBVAL *head = rebValue("head", image);  // ^-- see notes above on position
+    Value* image = ARG(IMAGE);
+    Value* head = rebValue("head", image);  // ^-- see notes above on position
     Move_Cell(image, head);
     rebRelease(head);
 
@@ -337,7 +319,7 @@ DECLARE_NATIVE(encode_png)
     //
     state.encoder.auto_convert = 0;
 
-    REBVAL *size = rebValue("pick", image, "'size");
+    RebolValue* size = rebValue("pick", image, "'size");
     REBLEN width = rebUnboxInteger("pick", size, "'x");
     REBLEN height = rebUnboxInteger("pick", size, "'y");
     rebRelease(size);
