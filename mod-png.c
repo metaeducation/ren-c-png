@@ -24,9 +24,21 @@
 // See README.md for information about this extension.
 //
 
+#include "tmp-mod-png.h"
+
 #include "lodepng.h"
 
-#include "tmp-mod-png.h"
+#include <stdbool.h>
+#include <stdint.h>
+#include <assert.h>
+
+#include "c-enhanced.h"
+
+typedef unsigned char Byte;
+typedef intptr_t REBINT;
+typedef intptr_t REBLEN;
+
+typedef RebolValue Value;
 
 
 //=//// CUSTOM SERIES-BACKED MEMORY ALLOCATOR /////////////////////////////=//
@@ -75,7 +87,7 @@ static unsigned rebol_zlib_decompress(
     // pointer parameters in case you update it (?)
     //
     // Rebol's decompression was not written for the caller to provide
-    // a buffer, though COMPRESS/INTO or DECOMPRESS/INTO would be useful.
+    // a buffer, though COMPRESS:INTO or DECOMPRESS:INTO would be useful.
     // So consider it.  But for now, free the buffer and let the logic of
     // zlib always make its own.
     //
@@ -140,8 +152,8 @@ DECLARE_NATIVE(IDENTIFY_PNG_Q)
     int arg = 5;
     state.decoder.zlibsettings.custom_context = &arg;
 
-    Size size;
-    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
+    size_t size;
+    const Byte* data = rebLockBytes(&size, "data");  // raw access to BLOB!
 
     unsigned width;
     unsigned height;
@@ -157,8 +169,10 @@ DECLARE_NATIVE(IDENTIFY_PNG_Q)
     //
     lodepng_state_cleanup(&state);
 
+    rebUnlockBytes(data);  // have to call before returning
+
     if (error != 0)
-        return Init_False(OUT);
+        return rebLogic(false);
 
     // !!! Should codec identifiers return any optional information they just
     // happen to get?  Instead of passing NULL for the addresses of the width
@@ -166,7 +180,7 @@ DECLARE_NATIVE(IDENTIFY_PNG_Q)
     // to return it.  Then any non-FALSE result could be "identified" while
     // still being potentially more informative about what was found out.
     //
-    return Init_True(OUT);
+    return rebLogic(true);
 }
 
 
@@ -203,8 +217,8 @@ DECLARE_NATIVE(DECODE_PNG)
     state.info_png.color.colortype = LCT_RGBA;
     state.info_png.color.bitdepth = 8;
 
-    Size size;
-    const Byte* data = Cell_Bytes_At(&size, ARG(DATA));
+    size_t size;
+    const Byte* data = rebLockBytes(&size, "data");
 
     unsigned char* image_bytes;
     unsigned w;
@@ -226,8 +240,10 @@ DECLARE_NATIVE(DECODE_PNG)
     //
     lodepng_state_cleanup(&state);
 
-    if (error != 0)
-        fail (lodepng_error_text(error));
+    rebUnlockBytes(data);  // have to call before returning
+
+    if (error != 0)  // RAISE since passing bad data is a potential error
+        return rebDelegate("raise", rebT(lodepng_error_text(error)));
 
     // Note LodePNG cannot decode into an existing buffer, though it has been
     // requested:
@@ -257,34 +273,31 @@ DECLARE_NATIVE(DECODE_PNG)
 //
 DECLARE_NATIVE(ENCODE_PNG)
 //
-// !!! Semantics for IMAGE! being a "series" with a "position" were extremely
-// dodgy in Rebol2/R3-Alpha (and remain so in things like Red today).  Saving
-// is no exception, Red seems to throw out the concept altogether there:
+// 1. Semantics for IMAGE! being a "series" with a "position" were extremely
+//    dodgy in Rebol2/R3-Alpha (and remain so in things like Red today).
+//    Saving is no exception, Red seems to throw out the concept:
 //
-//     red>> i: make image! 2x2
-//     red>> i/1: 1.2.3
-//     red>> i
-//     == make image! [2x2 #{010203FFFFFFFFFFFFFFFFFF}]
+//        red>> i: make image! 2x2
+//        red>> i/1: 1.2.3
+//        red>> i
+//        == make image! [2x2 #{010203FFFFFFFFFFFFFFFFFF}]
 //
-//     red>> i: tail i
-//     == make image! [2x2 #{}]
+//        red>> i: tail i
+//        == make image! [2x2 #{}]
 //
-//     red>> save %test.png i
+//        red>> save %test.png i
 //
-//     red>> load %test.png
-//     == make image! [2x2 #{010203FFFFFFFFFFFFFFFFFF}]
+//        red>> load %test.png
+//        == make image! [2x2 #{010203FFFFFFFFFFFFFFFFFF}]
 //
-// R3-Alpha gives a similar answer (unused pixels are 00, RGB reverse order).
-// Rebol2 gives back `make image! [2x2 #{}]`, losing the data.
+//    R3-Alpha does it similarly (unused pixels are 00, RGB reverse order).
+//    Rebol2 gives back `make image! [2x2 #{}]`, losing the data.
 //
-// We write the head position here--for lack of a better answer.
+//    We write the head position here--for lack of a better answer.
 {
     INCLUDE_PARAMS_OF_ENCODE_PNG;
 
-    Value* image = ARG(IMAGE);
-    Value* head = rebValue("head", image);  // ^-- see notes above on position
-    Move_Cell(image, head);
-    rebRelease(head);
+    Value* image = rebValue("head image");  // ^-- see notes above on position
 
     // Historically, Rebol would write (key="Software" value="REBOL") into
     // image metadata.  Is that interesting?  If so, the state has fields for
@@ -325,7 +338,7 @@ DECLARE_NATIVE(ENCODE_PNG)
     rebRelease(size);
 
     size_t binsize;
-    Byte* image_bytes = rebBytes(&binsize, "bytes of", image);
+    const Byte* image_bytes = rebLockBytes(&binsize, "bytes of", image);
 
     size_t encoded_size;
     Byte* encoded_bytes = NULL;
@@ -339,10 +352,10 @@ DECLARE_NATIVE(ENCODE_PNG)
     );
     lodepng_state_cleanup(&state);
 
-    rebFree(image_bytes);
+    rebUnlockBytes(image_bytes);  // have to call before returning
 
-    if (error != 0)
-        fail (lodepng_error_text(error));
+    if (error != 0)  // should FAIL, as there's no "good" error for encoding?
+        return rebDelegate("fail", rebT(lodepng_error_text(error)));
 
     // Because LodePNG was hooked with a custom zlib_malloc, it built upon
     // rebMalloc()...which backs its allocations with a series.  This means
