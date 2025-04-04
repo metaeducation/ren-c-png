@@ -24,8 +24,6 @@
 // See README.md for information about this extension.
 //
 
-#include "tmp-mod-png.h"
-
 #include "lodepng.h"
 
 #include <stdbool.h>
@@ -33,6 +31,11 @@
 #include <assert.h>
 
 #include "c-enhanced.h"
+
+#include "rebol.h"
+
+#include "tmp-mod-png.h"
+
 
 typedef unsigned char Byte;
 typedef intptr_t REBINT;
@@ -254,7 +257,7 @@ DECLARE_NATIVE(DECODE_PNG)
     RebolValue* blob = rebRepossess(image_bytes, (w * h) * 4);
 
     return rebValue(
-        "make-image compose [",
+        "make image! compose [",
             "(make pair! [", rebI(w), rebI(h), "])",
             rebR(blob),
         "]"
