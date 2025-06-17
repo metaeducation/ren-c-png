@@ -1,6 +1,6 @@
-REBOL [
-    Name: PNG
-    Notes: "See %extensions/README.md for the format and fields of this file"
+Rebol [
+    name: PNG
+    notes: "See %extensions/README.md for the format and fields of this file"
 ]
 
 use-librebol: 'yes

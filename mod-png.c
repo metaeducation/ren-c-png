@@ -1,9 +1,9 @@
 //
-//  File: %mod-lodepng.c
-//  Summary: "Native Functions for cryptography"
-//  Section: Extension
-//  Project: "Rebol 3 Interpreter and Run-time (Ren-C branch)"
-//  Homepage: https://github.com/metaeducation/ren-c/
+//  file: %mod-lodepng.c
+//  summary: "Native Functions for cryptography"
+//  section: extension
+//  project: "Rebol 3 Interpreter and Run-time (Ren-C branch)"
+//  homepage: https://github.com/metaeducation/ren-c/
 //
 //=////////////////////////////////////////////////////////////////////////=//
 //
