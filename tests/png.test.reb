@@ -8,7 +8,7 @@
     gif-img: decode 'gif read %../fixtures/rebol-logo.gif
     png-img: decode 'png read %../fixtures/rebol-logo.png
     all [
-        bmp-img == gif-img
-        bmp-img == png-img
+        bmp-img = gif-img
+        bmp-img = png-img
     ]
 )
