@@ -42,12 +42,10 @@ definitions: [
     LODEPNG_NO_COMPILE_ANCILLARY_CHUNKS
 ]
 
-sources: %mod-png.c
+sources: [mod-png.c]
 
 depends: [
-    [
-        %lodepng.c
-
+    lodepng.c [
         ; May 2018 update to MSVC 2017 added warnings about Spectre
         ; mitigation.
         ;
