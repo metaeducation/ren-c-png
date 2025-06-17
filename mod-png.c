@@ -245,8 +245,8 @@ DECLARE_NATIVE(DECODE_PNG)
 
     rebUnlockBytes(data);  // have to call before returning
 
-    if (error != 0)  // RAISE since passing bad data is a potential error
-        return rebDelegate("raise", rebT(lodepng_error_text(error)));
+    if (error != 0)  // PANIC since passing bad data is a potential error
+        return rebDelegate("panic", rebT(lodepng_error_text(error)));
 
     // Note LodePNG cannot decode into an existing buffer, though it has been
     // requested:
@@ -357,8 +357,8 @@ DECLARE_NATIVE(ENCODE_PNG)
 
     rebUnlockBytes(image_bytes);  // have to call before returning
 
-    if (error != 0)  // should FAIL, as there's no "good" error for encoding?
-        return rebDelegate("fail", rebT(lodepng_error_text(error)));
+    if (error != 0)  // PANIC as there's no "good" error for encoding (?)
+        return rebDelegate("panic", rebT(lodepng_error_text(error)));
 
     // Because LodePNG was hooked with a custom zlib_malloc, it built upon
     // rebMalloc()...which backs its allocations with a series.  This means
