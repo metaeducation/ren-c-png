@@ -50,7 +50,7 @@ typedef RebolValue Value;
 //
 // LodePNG allows for a custom allocator.  %lodepng.h contains prototypes for
 // these 3 functions, and expects them to be defined somewhere if you
-// `#define LODEPNG_NO_COMPILE_ALLOCATORS` (set in %lodepng/make-spec.reb)
+// `#define LODEPNG_NO_COMPILE_ALLOCATORS` (set in %lodepng/make-spec.r)
 //
 // Use rebAllocBytes(), because the memory can be later rebRepossess()'d into
 // a Rebol BLOB! value without making a new buffer and copying.
@@ -75,7 +75,7 @@ void lodepng_free(void* ptr)
 // the compression and decompression in via the LodePNGState.
 //
 // Hence when lodepng.c is compiled, we `#define LODEPNG_NO_COMPILE_ZLIB`
-// (set in %lodepng/make-spec.reb)
+// (set in %lodepng/make-spec.r)
 //
 //=////////////////////////////////////////////////////////////////////////=//
 

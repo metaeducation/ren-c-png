@@ -1,4 +1,4 @@
-; %png.test.reb
+; %png.test.r
 
 (image? decode 'png read %../fixtures/rebol-logo.png)
 
