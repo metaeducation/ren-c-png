@@ -136,7 +136,7 @@ static unsigned rebol_zlib_compress(
 //
 //  "Codec for identifying BLOB! data for a PNG"
 //
-//      return: [logic?]
+//      return: [logic!]
 //      data [blob!]
 //  ]
 //
