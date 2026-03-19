@@ -132,7 +132,7 @@ static unsigned rebol_zlib_compress(
 
 
 //
-//  identify-png?: native [
+//  /identify-png?: native [
 //
 //  "Codec for identifying BLOB! data for a PNG"
 //
@@ -190,7 +190,7 @@ DECLARE_NATIVE(IDENTIFY_PNG_Q)
 
 
 //
-//  decode-png: native [
+//  /decode-png: native [
 //
 //  "Codec for decoding BLOB! data for a PNG"
 //
@@ -268,7 +268,7 @@ DECLARE_NATIVE(DECODE_PNG)
 
 
 //
-//  encode-png: native [
+//  /encode-png: native [
 //
 //  "Codec for encoding a PNG image"
 //
