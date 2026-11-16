@@ -1,6 +1,6 @@
 ## LodePNG Extension for Encoding and Decoding PNG
 
-This is a PNG encoding/decoding extension for Ren-C.
+This is a PNG encoding/decoding extension for Revolt.
 
 It depends on having the IMAGE! extension either built into the interpreter,
 or loaded dynamically.
@@ -34,5 +34,5 @@ Saphirion apparently hit bugs in the encoding that file implemented.  But
 rather than try and figure out how to fix it, they just included LodePNG--and
 adapted it for use in encoding only, while retaining %u-png.c for decoding.
 
-So for simplicity, Ren-C went ahead and removed %u-png.c to use LodePNG for
+So for simplicity, Revolt went ahead and removed %u-png.c to use LodePNG for
 decoding and PNG file identification as well.
